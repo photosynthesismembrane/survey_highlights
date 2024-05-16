@@ -82,46 +82,67 @@
         background-color: #ffb7b7;
         cursor: pointer;
     }
+    .header-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
 </style>
-<script src="image_data_eleborate_format.js"></script>
+<script src="imageData_with_llava_cogvlm.js"></script>
 </head>
 <body>
     <form action="https://formspree.io/f/xyyrojnd" method="POST">
         <div id="tabContainer"></div>
     </form>
     <script>
+        
+        function shuffleModelsArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        const models = [
+            "llava", "llava",
+            "deepseek", "deepseek",
+            "cogvlm", "cogvlm",
+        ];
 
         const options = ["Very Poor", "Poor", "Average", "Good", "Excellent"];
         const tabTitles = ["Composition", "Contrast", "Movement", "Rythm", "Proportion", "Focus Point"];
         const tabQuestions = {
-                0: "How would you rate the quality of the <strong>text</strong> on <strong>composition</strong> of these paintings?",
-                1: "How would you rate the quality of the <strong>text</strong> about how <strong>contrast</strong> is used of these paintings?",
-                2: "How would you rate the quality of the <strong>text</strong> on <strong>movement</strong> visualized in the paintings?",
-                3: "How would you rate the quality of the <strong>text</strong> on <strong>rythm</strong> shown in the painting?",
-                4: "How would you rate the quality of the <strong>text</strong> on use of difference in <strong>proportion</strong>?",
-                5: "How would you rate the quality of the <strong>text</strong> on the <strong>focus point</strong> of the paintings?",
+                0: "Judge the quality of the <strong>text</strong> on <strong>composition</strong> of these paintings. Do this by highlighting parts of the texts that you think are not fitting or could be improved.",
+                1: "Judge the quality of the <strong>text</strong> about how <strong>contrast</strong> is used of these paintings. Do this by highlighting parts of the texts that you think are not fitting or could be improved.",
+                2: "Judge the quality of the <strong>text</strong> on <strong>movement</strong> visualized in the paintings. Do this by highlighting parts of the texts that you think are not fitting or could be improved.",
+                3: "Judge the quality of the <strong>text</strong> on <strong>rhythm</strong> shown in the painting. Do this by highlighting parts of the texts that you think are not fitting or could be improved.",
+                4: "Judge the quality of the <strong>text</strong> on use of difference in <strong>proportion</strong>. Do this by highlighting parts of the texts that you think are not fitting or could be improved.",
+                5: "Judge the quality of the <strong>text</strong> on the <strong>focus point</strong> of the paintings. Do this by highlighting parts of the texts that you think are not fitting or could be improved.",
             };
         const tabData = {
             0: "composition",
-            1: "contrast_elements",
+            1: "contrast",
             2: "movement",
-            3: "rythm",
+            3: "rhythm",
             4: "proportion",
             5: "focus_point",
         };
         
         function createTabContent(tabIndex, items, last) {
             let tabContent = `<div class="tab" id="tab${tabIndex}">`;
-            tabContent += `<h2>${tabTitles[tabIndex]}</h2>`;
-            tabContent += `<p>${tabQuestions[tabIndex]}</p><br/><br/>`;
+            tabContent += `<div class="header-container"><h2>${tabTitles[tabIndex]}</h2><p>${tabQuestions[tabIndex]}</p></div>`;
+
+            const shuffleModels = shuffleModelsArray(models);
+
             items.forEach((item, index) => {
+                model = shuffleModels[index];
                 tabContent += `
                     <div class="item">
-                        <img src="images/${item.name}.jpg" alt="${item.name}">
-                        <div class="text-content" id="${tabData[tabIndex]}_${item.name}">
-                            <span>${item[tabData[tabIndex]]}</span>
+                        <img src="images/${item.image_filename}" alt="${item.image_filename}">
+                        <div class="text-content" id="${tabData[tabIndex]}_${item.image_filename}">
+                            <span>${item[`${model}_${tabData[tabIndex]}`]}</span>
                         </div>
-                        <input type="hidden" class="input-highlights" id="highlights_${tabData[tabIndex]}_${item.name}" name="highlights_${tabData[tabIndex]}_${item.name}">
+                        <input type="hidden" class="input-highlights" id="highlights_${tabData[tabIndex]}_${item.image_filename}" name="highlights_${tabData[tabIndex]}_${item.image_filename}">
                     </div>
                 `;
             });
@@ -156,7 +177,7 @@
             const container = document.getElementById("tabContainer");
             shuffleArray(imageData);
             for (let i = 0; i < 6; i++) {
-                container.innerHTML += createTabContent(i, imageData.slice(i * 5, (i + 1) * 5), i === 5);
+                container.innerHTML += createTabContent(i, imageData.slice(i * 6, (i + 1) * 6), i === 6);
             }
             changeTab(0, 0); // Display the first tab
             attachScrollToNextItem();
