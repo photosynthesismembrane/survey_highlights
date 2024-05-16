@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Text Combinations</title>
+<style>
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        background-color: #f9f9f9;
+        color: #333;
+        line-height: 1.6;
+        padding: 20px;
+    }
+    .tab {
+        display: none; /* Hide tabs initially */
+    }
+    .visible {
+        display: block; /* Only the active tab is visible */
+    }
+    #tabContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* This centers the child elements horizontally */
+        width: 100%; /* Ensures the container takes full width */
+    }
+    .item {
+        display: flex; /* This will align the image and text side by side */
+        align-items: center; /* This will vertically align items in the middle */
+        justify-content: center; /* Aligns items to the start of the 'item' container */
+        margin-bottom: 20px;
+        max-width: 100%;
+        padding: 40px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+    img {
+        width: auto; /* Auto width for responsive size */
+        max-height: 80vh;
+        border: 1px solid #ccc;
+        /* object-fit: cover; Ensures images cover the area well without distortion */
+    }
+    .text-content {
+        margin: 20px; /* Space between image and text */
+        max-width: 40vw;
+    }
+    input[type="radio"], textarea, button {
+        margin-right: 5px;
+        margin-top: 20px;
+    }
+    label {
+        margin-right: 10px;
+        font-size: 16px;
+    }
+    .text-field-container {
+        text-align: center;
+    }
+    textarea {
+        width: 80%; /* Adequate width for writing a paragraph */
+        height: 100px; /* Enough height to write multiple lines */
+        margin: 20px auto; /* Center align the textarea */
+        display: block; /* Ensures that textarea takes its own line */
+    }
+    .controls {
+        text-align: center; /* Center-aligns buttons */
+        padding: 10px;
+    }
+    button {
+        font-size: 16px;
+        padding: 10px;
+        margin: 10px; /* Space between buttons */
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    .highlighted {
+        background-color: #ffb7b7;
+        cursor: pointer;
+    }
+</style>
+<script src="image_data_eleborate_format.js"></script>
+</head>
+<body>
+    <form action="https://formspree.io/f/xyyrojnd" method="POST">
+        <div id="tabContainer"></div>
+    </form>
+    <script>
+
+        const options = ["Very Poor", "Poor", "Average", "Good", "Excellent"];
+        const tabTitles = ["Composition", "Contrast", "Movement", "Rythm", "Proportion", "Focus Point"];
+        const tabQuestions = {
+                0: "How would you rate the quality of the <strong>text</strong> on <strong>composition</strong> of these paintings?",
+                1: "How would you rate the quality of the <strong>text</strong> about how <strong>contrast</strong> is used of these paintings?",
+                2: "How would you rate the quality of the <strong>text</strong> on <strong>movement</strong> visualized in the paintings?",
+                3: "How would you rate the quality of the <strong>text</strong> on <strong>rythm</strong> shown in the painting?",
+                4: "How would you rate the quality of the <strong>text</strong> on use of difference in <strong>proportion</strong>?",
+                5: "How would you rate the quality of the <strong>text</strong> on the <strong>focus point</strong> of the paintings?",
+            };
+        const tabData = {
+            0: "composition",
+            1: "contrast_elements",
+            2: "movement",
+            3: "rythm",
+            4: "proportion",
+            5: "focus_point",
+        };
+        
+        function createTabContent(tabIndex, items, last) {
+            let tabContent = `<div class="tab" id="tab${tabIndex}">`;
+            tabContent += `<h2>${tabTitles[tabIndex]}</h2>`;
+            tabContent += `<p>${tabQuestions[tabIndex]}</p><br/><br/>`;
+            items.forEach((item, index) => {
+                tabContent += `
+                    <div class="item">
+                        <img src="images/${item.name}.jpg" alt="${item.name}">
+                        <div class="text-content" id="${tabData[tabIndex]}_${item.name}">
+                            <span>${item[tabData[tabIndex]]}</span>
+                        </div>
+                        <input type="hidden" class="input-highlights" id="highlights_${tabData[tabIndex]}_${item.name}" name="highlights_${tabData[tabIndex]}_${item.name}">
+                    </div>
+                `;
+            });
+
+            tabContent += `<div class="text-field-container">`;
+            tabContent += `<p>Please give your overal opinion on the quality of the text:</p>`;
+            tabContent += `<textarea name="feedback_${tabData[tabIndex]}" placeholder="Enter your feedback"></textarea>`;
+            tabContent += `</div>`;
+            tabContent += `<div class="controls">`;
+            if (tabIndex > 0) {
+                tabContent += `<button type="button" onclick="changeTab(${tabIndex}, -1)">Previous</button>`;
+            }
+            if (!last) {
+                tabContent += `<button type="button" onclick="changeTab(${tabIndex}, 1)">Next</button>`;
+            } else {
+                tabContent += `<button type="submit">Submit</button>`;
+            }
+            tabContent += `</div></div>`;
+            return tabContent;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                // Generate a random index from 0 to i
+                const j = Math.floor(Math.random() * (i + 1));
+                // Swap elements at indices i and j
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function displayTabs() {
+            const container = document.getElementById("tabContainer");
+            shuffleArray(imageData);
+            for (let i = 0; i < 6; i++) {
+                container.innerHTML += createTabContent(i, imageData.slice(i * 5, (i + 1) * 5), i === 5);
+            }
+            changeTab(0, 0); // Display the first tab
+            attachScrollToNextItem();
+            addHighlightListeners();
+        }
+        
+        function attachScrollToNextItem() {
+            const radioButtons = document.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(button => {
+                button.addEventListener('change', function() {
+                    let parentItem = this.closest('.item');
+                    let nextItem = parentItem.nextElementSibling;
+                    if (nextItem && nextItem.classList.contains('item')) {
+                        scrollToItem(nextItem);
+                    } else {
+                        scrollToBottom();
+                    }
+                });
+            });
+        }
+
+        function scrollToItem(item) {
+            const yOffset = -window.innerHeight / 2 + item.clientHeight / 2; // Calculate offset to center the item
+            const yPosition = item.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            
+            window.scrollTo({ top: yPosition, behavior: 'smooth' });
+        }
+
+        function scrollToBottom() {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function changeTab(current, move) {
+            document.getElementById("tab" + current).classList.remove("visible");
+            document.getElementById("tab" + (current + move)).classList.add("visible");
+            window.scrollTo(0, 0); // Scrolls to the top of the page
+        }
+
+        window.onload = displayTabs;
+
+        // When DOM loaded
+        function addHighlightListeners() {
+            // Get all "highlighted" elements
+            const highlightedElements = document.querySelectorAll('.text-content');
+            console.log(highlightedElements);
+
+            // Loop through each element
+            highlightedElements.forEach(function(element) {
+
+                highlights = [];
+                
+                element.addEventListener('mouseup', function(e) {
+                    const selection = window.getSelection();
+                    if (!selection.isCollapsed && selection.toString().trim() !== '') {
+                        const range = selection.getRangeAt(0);
+                        const selectionContents = range.extractContents();
+                        const span = document.createElement('span');
+                        span.classList.add('highlighted');
+                        span.appendChild(selectionContents);
+                        range.insertNode(span);
+
+                        span.onclick = function() {
+                            // Find the index of the clicked highlight in the array
+                            const index = highlights.indexOf(span.textContent);
+                            if (index > -1) {
+                                highlights.splice(index, 1); // Remove the highlight from the array
+                            }
+
+                            // Replace the span with its text content
+                            const textNode = document.createTextNode(span.textContent);
+                            span.parentNode.replaceChild(textNode, span);
+
+                            // Update the hidden input
+                            document.getElementById(`highlights_${element.id}`).value = highlights.join(' | ');
+                        };
+
+                        highlights.push(span.textContent);
+                        document.getElementById(`highlights_${element.id}`).value = highlights.join(' | ');  // Join highlighted texts with a separator
+                    }
+                    selection.removeAllRanges(); // Clear selection
+                });
+            });
+        }
+    </script>
+</body>
+</html>

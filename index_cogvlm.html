@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Text Combinations</title>
+<style>
+    body {
+        font-family: Helvetica, Arial, sans-serif;
+        background-color: #f9f9f9;
+        color: #333;
+        line-height: 1.6;
+        padding: 20px;
+    }
+    .tab {
+        display: none; /* Hide tabs initially */
+    }
+    .visible {
+        display: block; /* Only the active tab is visible */
+    }
+    #tabContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* This centers the child elements horizontally */
+        width: 100%; /* Ensures the container takes full width */
+    }
+    .item {
+        display: flex; /* This will align the image and text side by side */
+        align-items: center; /* This will vertically align items in the middle */
+        justify-content: center; /* Aligns items to the start of the 'item' container */
+        margin-bottom: 20px;
+        max-width: 100%;
+        padding: 40px;
+    }
+    img {
+        width: auto; /* Auto width for responsive size */
+        max-height: 80vh;
+        max-width: 25vw;
+        border: 1px solid #ccc;
+        /* object-fit: cover; Ensures images cover the area well without distortion */
+    }
+    .text-content {
+        display: flex; /* This will align the image and text side by side */
+        align-items: center; /* This will vertically align items in the middle */
+        justify-content: center; /* Aligns items to the start of the 'item' container */
+        padding: 40px;
+        margin: 20px; /* Space between image and text */
+        width: 30vw;
+        height: 60vh;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+    input[type="radio"], textarea, button {
+        margin-right: 5px;
+        margin-top: 20px;
+    }
+    label {
+        margin-right: 10px;
+        font-size: 16px;
+    }
+    .text-field-container {
+        text-align: center;
+    }
+    textarea {
+        width: 80%; /* Adequate width for writing a paragraph */
+        height: 100px; /* Enough height to write multiple lines */
+        margin: 20px auto; /* Center align the textarea */
+        display: block; /* Ensures that textarea takes its own line */
+    }
+    .controls {
+        text-align: center; /* Center-aligns buttons */
+        padding: 10px;
+    }
+    button {
+        font-size: 16px;
+        padding: 10px;
+        margin: 10px; /* Space between buttons */
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    .selected {
+        background-color: #e7f4e4; /* Subtle light green background for selected text blocks */
+    }
+
+</style>
+<script src="image_data_two_models.js"></script>
+</head>
+<body>
+    <form action="https://formspree.io/f/xyyrojnd" method="POST">
+        <input type="hidden" id="selectedIndices" name="selectedIndices" value="">
+        <div id="tabContainer"></div>
+    </form>
+    <script>        
+        function createTabContent(tabIndex, items, last) {
+            let tabContent = `<div class="tab" id="tab${tabIndex}">`;
+            items.forEach((item, index) => {
+                if (Math.random() > 0.5) {
+                    tabContent += `
+                        <div class="item">
+                            <div class="text-content" data-index="llava_${item["image_filename"]}" onclick="toggleSelection(event)">
+                                <span>${item["composition_llava"]}</span><br>
+                            </div>
+                            <img src="images/${item["image_filename"]}" alt="${item.name}">
+                            <div class="text-content" data-index="cogvlm_${item["image_filename"]}" onclick="toggleSelection(event)">
+                                <span>${item["composition_cogvlm"]}</span><br>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tabContent += `
+                        <div class="item">
+                            <div class="text-content" data-index="cogvlm_${item["image_filename"]}" onclick="toggleSelection(event)">
+                                <span>${item["composition_cogvlm"]}</span><br>
+                            </div>
+                            <img src="images/${item["image_filename"]}" alt="${item.name}">
+                            <div class="text-content" data-index="llava_${item["image_filename"]}" onclick="toggleSelection(event)">
+                                <span>${item["composition_llava"]}</span><br>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+            });
+
+            tabContent += `<div class="text-field-container">`;
+            tabContent += `<p>Please give your overal opinion on the quality of the text:</p>`;
+            tabContent += `<textarea name="feedback_${tabIndex}" placeholder="Enter your feedback"></textarea>`;
+            tabContent += `</div>`;
+            tabContent += `<div class="controls">`;
+            if (tabIndex > 0) {
+                tabContent += `<button type="button" onclick="changeTab(${tabIndex}, -1)">Previous</button>`;
+            }
+            if (!last) {
+                tabContent += `<button type="button" onclick="changeTab(${tabIndex}, 1)">Next</button>`;
+            } else {
+                tabContent += `<button type="submit">Submit</button>`;
+            }
+            tabContent += `</div></div>`;
+            return tabContent;
+        }
+        
+        function toggleSelection(event) {
+            const textContent = event.currentTarget;
+            const allTextContents = textContent.parentNode.querySelectorAll('.text-content');
+
+            // Check and deselect any other selected text-content in the same item
+            allTextContents.forEach(block => {
+                if (block !== textContent) {
+                    block.classList.remove('selected');
+                }
+            });
+
+            // Toggle the selected class on the clicked text-content
+            textContent.classList.add('selected');
+
+            // Update hidden input for form submission
+            const itemIndex = textContent.getAttribute('data-index');
+            const hiddenInput = document.getElementById('selectedIndices');
+            let selectedIndexArray = hiddenInput.value ? hiddenInput.value.split(',') : [];
+            selectedIndexArray = selectedIndexArray.filter(index => !index.startsWith(itemIndex.split('_')[0] + "_"));
+            selectedIndexArray.push(itemIndex);
+            hiddenInput.value = selectedIndexArray.join(',');
+
+            // Scroll logic: move to the next item
+            let parentItem = textContent.closest('.item');
+            let nextItem = parentItem.nextElementSibling;
+            if (nextItem && nextItem.classList.contains('item')) {
+                scrollToItem(nextItem);
+            } else {
+                scrollToBottom();
+            }
+        }
+
+        function scrollToItem(item) {
+            const yOffset = -window.innerHeight / 2 + item.clientHeight / 2; // Calculate offset to center the item
+            const yPosition = item.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: yPosition, behavior: 'smooth' });
+        }
+
+        function scrollToBottom() {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        document.querySelectorAll('.text-content').forEach(element => {
+            element.addEventListener('click', toggleSelection);
+        });
+
+
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                // Generate a random index from 0 to i
+                const j = Math.floor(Math.random() * (i + 1));
+                // Swap elements at indices i and j
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function displayTabs() {
+            const container = document.getElementById("tabContainer");
+            shuffleArray(imageData);
+            for (let i = 0; i < 6; i++) {
+                container.innerHTML += createTabContent(i, imageData.slice(i * 5, (i + 1) * 5), i === 5);
+            }
+            changeTab(0, 0); // Display the first tab
+            attachScrollToNextItem();
+        }
+        
+        function attachScrollToNextItem() {
+            const radioButtons = document.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(button => {
+                button.addEventListener('change', function() {
+                    let parentItem = this.closest('.item');
+                    let nextItem = parentItem.nextElementSibling;
+                    if (nextItem && nextItem.classList.contains('item')) {
+                        scrollToItem(nextItem);
+                    } else {
+                        scrollToBottom();
+                    }
+                });
+            });
+        }
+
+        function scrollToItem(item) {
+            const yOffset = -window.innerHeight / 2 + item.clientHeight / 2; // Calculate offset to center the item
+            const yPosition = item.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            
+            window.scrollTo({ top: yPosition, behavior: 'smooth' });
+        }
+
+        function scrollToBottom() {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function changeTab(current, move) {
+            document.getElementById("tab" + current).classList.remove("visible");
+            document.getElementById("tab" + (current + move)).classList.add("visible");
+            window.scrollTo(0, 0); // Scrolls to the top of the page
+        }
+
+        window.onload = displayTabs;
+    </script>
+</body>
+</html>

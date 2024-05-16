@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text Highlighter with Non-Destructive Remove</title>
+    <style>
+        #textArea {
+            border: 1px solid black;
+            padding: 10px;
+            margin-bottom: 10px;
+            height: 150px;
+            width: 300px;
+            overflow: auto;
+            position: relative;
+        }
+        .highlighted {
+            background-color: #ffb7b7;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="textArea" contenteditable="true">
+        Select and highlight multiple parts of this text. Click on any highlighted section to remove the highlight but keep the text.
+    </div>
+    <form id="submitForm" action="/submit-highlights" method="POST">
+        <input type="hidden" id="highlightedText" name="highlightedText">
+        <button type="submit">Submit Highlighted Text</button>
+    </form>
+
+    <script>
+        let highlights = [];
+
+        document.getElementById('textArea').addEventListener('mouseup', function(e) {
+            const selection = window.getSelection();
+            if (!selection.isCollapsed && selection.toString().trim() !== '') {
+                const range = selection.getRangeAt(0);
+                const selectionContents = range.extractContents();
+                const span = document.createElement('span');
+                span.classList.add('highlighted');
+                span.appendChild(selectionContents);
+                range.insertNode(span);
+
+                span.onclick = function() {
+                    // Find the index of the clicked highlight in the array
+                    const index = highlights.indexOf(span.textContent);
+                    if (index > -1) {
+                        highlights.splice(index, 1); // Remove the highlight from the array
+                    }
+
+                    // Replace the span with its text content
+                    const textNode = document.createTextNode(span.textContent);
+                    span.parentNode.replaceChild(textNode, span);
+                    
+                    // Update the hidden input
+                    document.getElementById('highlightedText').value = highlights.join(' | ');
+                };
+
+                highlights.push(span.textContent);
+                document.getElementById('highlightedText').value = highlights.join(' | ');  // Join highlighted texts with a separator
+            }
+            selection.removeAllRanges(); // Clear selection
+        });
+
+        document.getElementById('submitForm').addEventListener('submit', function(event) {
+            if (highlights.length === 0) {
+                alert("Please select and highlight some text before submitting.");
+                event.preventDefault();  // Prevent the form from being submitted
+            }
+            alert("Submitting highlights: " + highlights.join(' | '));
+        });
+    </script>
+</body>
+</html>
