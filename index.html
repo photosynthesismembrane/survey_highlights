@@ -228,7 +228,7 @@
             // Loop through each element
             highlightedElements.forEach(function(element) {
 
-                highlights = [];
+                element.highlights = [];
                 
                 element.addEventListener('mouseup', function(e) {
                     const selection = window.getSelection();
@@ -242,9 +242,9 @@
 
                         span.onclick = function() {
                             // Find the index of the clicked highlight in the array
-                            const index = highlights.indexOf(span.textContent);
+                            const index = element.highlights.indexOf(span.textContent);
                             if (index > -1) {
-                                highlights.splice(index, 1); // Remove the highlight from the array
+                                element.highlights.splice(index, 1); // Remove the highlight from the array
                             }
 
                             // Replace the span with its text content
@@ -252,11 +252,11 @@
                             span.parentNode.replaceChild(textNode, span);
 
                             // Update the hidden input
-                            document.getElementById(`highlights_${element.id}`).value = highlights.join(' | ');
+                            document.getElementById(`highlights_${element.id}`).value = element.highlights.join(' | ');
                         };
 
-                        highlights.push(span.textContent);
-                        document.getElementById(`highlights_${element.id}`).value = highlights.join(' | ');  // Join highlighted texts with a separator
+                        element.highlights.push(span.textContent);
+                        document.getElementById(`highlights_${element.id}`).value = element.highlights.join(' | ');  // Join highlighted texts with a separator
                     }
                     selection.removeAllRanges(); // Clear selection
                 });
