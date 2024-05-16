@@ -178,7 +178,7 @@
             const container = document.getElementById("tabContainer");
             shuffleArray(imageData);
             for (let i = 0; i < 6; i++) {
-                container.innerHTML += createTabContent(i, imageData.slice(i * 6, (i + 1) * 6), i === 6);
+                container.innerHTML += createTabContent(i, imageData.slice(i * 6, (i + 1) * 6), i === 5);
             }
             changeTab(0, 0); // Display the first tab
             attachScrollToNextItem();
